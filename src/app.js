@@ -10,6 +10,7 @@ app.use('/alarms', require('./routes/alarms'));
 app.use('/doses', require('./routes/doses'));
 app.use('/history', require('./routes/doses'));
 app.use('/emergency-contact', require('./routes/emergency'));
+app.use('/', require('./routes/ai'));
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
