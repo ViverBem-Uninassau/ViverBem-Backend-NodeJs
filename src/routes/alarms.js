@@ -17,15 +17,20 @@ router.get('/:device_id', async (req, res) => {
     const alarms = await firestore.getByDeviceId('alarms', req.params.device_id);
     res.json(alarms);
   } catch (err) {
+    console.error('Erro GET /alarms:', err);
     res.status(500).json({ error: 'Erro ao buscar alarmes' });
   }
 });
 
 router.post('/', async (req, res) => {
   try {
-    const { medication, time, frequency, dosage, fcm_token } = req.body;
-    if (!medication || !time || !frequency || !dosage) {
-      return res.status(400).json({ error: 'Campos obrigatórios: medication, time, frequency, dosage' });
+    const { medication, time, frequency, dosage, dosage_value, dosage_unit, fcm_token } = req.body;
+    const finalDosage = dosage || (dosage_value != null && dosage_unit ? `${dosage_value} ${dosage_unit}` : null);
+
+    if (!medication || !time || !frequency || !finalDosage) {
+      return res.status(400).json({
+        error: 'Campos obrigatórios: medication, time, frequency, dosage (ou dosage_value + dosage_unit)',
+      });
     }
 
     // RN03: intervalo mínimo de 1h entre alarmes do mesmo medicamento
@@ -47,13 +52,14 @@ router.post('/', async (req, res) => {
       medication,
       time,
       frequency,
-      dosage,
+      dosage: finalDosage,
       fcm_token: fcm_token || null,
       active: true,
     });
 
     res.status(201).json({ id });
   } catch (err) {
+    console.error('Erro POST /alarms:', err);
     res.status(500).json({ error: 'Erro ao criar alarme' });
   }
 });
