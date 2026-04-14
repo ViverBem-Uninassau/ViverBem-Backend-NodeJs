@@ -19,6 +19,7 @@ router.post('/confirm', async (req, res) => {
       status: 'confirmed',
       confirmed_at: new Date().toISOString(),
     });
+    
     res.status(201).json({ id });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao confirmar dose' });

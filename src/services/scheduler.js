@@ -1,59 +1,79 @@
-// src/services/scheduler.js
 const cron = require('node-cron');
-const firestore = require('./firestore');
+const { getAll, getById, update } = require('./firestore'); // ✅ IMPORT CORRETO
 const fcm = require('./fcm');
 
+// Pega hora atual no formato HH:MM
 function getCurrentTime() {
   const now = new Date();
   return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 }
 
+// 🔔 Verifica alarmes e dispara notificação
 async function checkAndSendAlarms() {
-  const currentTime = getCurrentTime();
-  const alarms = await firestore.getAll('alarms');
+  try {
+    const currentTime = getCurrentTime();
 
-  for (const alarm of alarms) {
-    if (!alarm.active || alarm.time !== currentTime) continue;
-    if (!alarm.fcm_token) continue;
+    const alarms = await getAll('alarms'); // ✅ corrigido
 
-    await fcm.sendPushNotification(
-      alarm.fcm_token,
-      'Hora do medicamento!',
-      `${alarm.medication} — tome agora.`
-    );
+    for (const alarm of alarms) {
+      if (!alarm.active) continue;
+      if (alarm.time !== currentTime) continue;
+      if (!alarm.fcm_token) continue;
+
+      await fcm.sendPushNotification(
+        alarm.fcm_token,
+        'Hora do medicamento!',
+        `${alarm.medication} — tome agora.`
+      );
+    }
+
+  } catch (err) {
+    console.error('Erro checkAndSendAlarms:', err);
   }
 }
 
+// ⏰ Verifica doses não confirmadas
 async function checkMissedDoses() {
-  const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const doses = await firestore.getAll('dose_history');
+  try {
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
-  const pending = doses.filter(d =>
-    d.status === 'pending' &&
-    d.created_at > fifteenMinAgo &&
-    (d.attempts || 0) < 3
-  );
+    const doses = await getAll('dose_history'); // ✅ corrigido
 
-  for (const dose of pending) {
-    const alarm = await firestore.getById('alarms', dose.alarm_id);
-    if (!alarm || !alarm.fcm_token) continue;
-
-    await fcm.sendPushNotification(
-      alarm.fcm_token,
-      'Você tomou o medicamento?',
-      `${dose.medication} — confirme ou adie.`
+    const pending = doses.filter(d =>
+      d.status === 'pending' &&
+      d.created_at > fifteenMinAgo &&
+      (d.attempts || 0) < 3
     );
 
-    await firestore.update('dose_history', dose.id, {
-      attempts: (dose.attempts || 0) + 1,
-    });
+    for (const dose of pending) {
+      const alarm = await getById('alarms', dose.alarm_id); // ✅ corrigido
+      if (!alarm || !alarm.fcm_token) continue;
+
+      await fcm.sendPushNotification(
+        alarm.fcm_token,
+        'Você tomou o medicamento?',
+        `${dose.medication} — confirme ou adie.`
+      );
+
+      await update('dose_history', dose.id, {
+        attempts: (dose.attempts || 0) + 1,
+      }); // ✅ corrigido
+    }
+
+  } catch (err) {
+    console.error('Erro checkMissedDoses:', err);
   }
 }
 
+// 🚀 Inicia os cron jobs
 function startScheduler() {
-  cron.schedule('* * * * *', checkAndSendAlarms);
-  cron.schedule('*/15 * * * *', checkMissedDoses);
+  cron.schedule('* * * * *', checkAndSendAlarms);     // a cada minuto
+  cron.schedule('*/15 * * * *', checkMissedDoses);    // a cada 15 min
   console.log('Scheduler iniciado.');
 }
 
-module.exports = { startScheduler, checkAndSendAlarms, checkMissedDoses };
+module.exports = {
+  startScheduler,
+  checkAndSendAlarms,
+  checkMissedDoses,
+};
