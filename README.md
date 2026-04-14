@@ -69,48 +69,6 @@ O backend orquestra lógicas vitais para a segurança do paciente:
 ### Emergência
 * `GET /emergency-contact`, `POST /emergency-contact`, etc. - Gerenciamento de contatos de confiança.
 
-## 🛠️ Como Executar Localmente
-
-### Pré-requisitos
-* Node.js instalado (v18+ recomendado).
-* Conta no Firebase com Firestore e Cloud Messaging configurados.
-* Chave de serviço do Firebase (`firebase-adminsdk.json`).
-
-### Instalação
-
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/viverbem-backend-nodejs.git
-   cd viverbem-backend-nodejs
-   ```
-
-2. Instale as dependências:
-   ```bash
-   npm install
-   ```
-
-3. Configure as variáveis de ambiente crie um arquivo `.env` na raiz do projeto:
-   ```env
-   PORT=3000
-   FIREBASE_PROJECT_ID=seu_project_id
-   FIREBASE_CLIENT_EMAIL=seu_client_email
-   FIREBASE_PRIVATE_KEY="sua_private_key"
-   OPENAI_API_KEY=sua_chave_aqui
-   ```
-
-4. Inicie o servidor:
-   ```bash
-   npm run start
-   # Ou para desenvolvimento: npm run dev
-   ```
-
-## 🧪 Executando Testes
-
-O projeto utiliza Jest e Supertest para garantir a qualidade do código.
-```bash
-npm run test
-```
-
 ## 📈 Metas de Desempenho
 * **Tempo de Resposta:** < 5 segundos para fluxos completos de IA.
 * **Escalabilidade:** Arquitetura pronta para até 10.000 usuários simultâneos.
